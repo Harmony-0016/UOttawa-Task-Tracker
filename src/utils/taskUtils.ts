@@ -210,7 +210,7 @@ export function parseBrightspaceIcs(icsContent: string): TaskItem[] {
           }
         }
 
-        const isStartEvent = title.toLowerCase().includes('starts') || description.toLowerCase().includes('starts ');
+        const isStartEvent = title.toLowerCase().includes('starts') || description.toLowerCase().includes('starts ') || title.toLowerCase().includes('available');
         let startDateIso = undefined;
 
         if (isStartEvent && parsedStartDate) {

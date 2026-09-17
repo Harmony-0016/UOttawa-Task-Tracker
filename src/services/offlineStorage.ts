@@ -21,7 +21,33 @@ export class OfflineStorageService {
     try {
       const raw = localStorage.getItem(TASKS_STORAGE_KEY);
       if (raw) {
-        return JSON.parse(raw);
+        let tasks = JSON.parse(raw) as TaskItem[];
+        
+        // One-time sanitization for "starts" / "available" events that were incorrectly marked with a dueDate
+        let modified = false;
+        tasks = tasks.map((t) => {
+          const title = t.title.toLowerCase();
+          const desc = t.description?.toLowerCase() || '';
+          const isStartEvent = title.includes('starts ') || desc.includes('starts ') || title.includes('available');
+          
+          if (isStartEvent && t.dueDate) {
+            modified = true;
+            return {
+              ...t,
+              startDate: t.startDate || t.dueDate,
+              dueDate: undefined,
+              isOptional: true,
+              priority: 'low'
+            };
+          }
+          return t;
+        });
+
+        if (modified) {
+          this.saveTasks(tasks);
+        }
+
+        return tasks;
       }
     } catch (err) {
       console.error('Failed to load tasks from localStorage', err);
