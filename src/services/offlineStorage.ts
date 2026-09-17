@@ -1,7 +1,7 @@
 import { DesktopNotification, TaskItem } from '../types';
 import { INITIAL_BRIGHTSPACE_TASKS } from './brightspaceService';
 
-const TASKS_STORAGE_KEY = 'uottawa_tasks_offline_cache_v1';
+const TASKS_STORAGE_KEY = 'uottawa_tasks_offline_cache_v2';
 const NOTIFICATIONS_STORAGE_KEY = 'uottawa_desktop_notifications_v1';
 const OFFLINE_QUEUE_KEY = 'uottawa_offline_sync_queue_v1';
 

@@ -14,7 +14,8 @@ import {
   TaskItem, 
   BrightspaceSession, 
   DesktopNotification, 
-  FilterOptions 
+  FilterOptions,
+  CourseMaterial
 } from './types';
 import { OfflineStorageService } from './services/offlineStorage';
 import { BrightspaceService } from './services/brightspaceService';
@@ -28,19 +29,23 @@ import { TaskEditModal } from './components/TaskEditModal';
 import { BrightspaceExplorerModal } from './components/BrightspaceExplorerModal';
 import { CalendarTimelineView } from './components/CalendarTimelineView';
 import { CoursesView } from './components/CoursesView';
+import { LecturesView } from './components/LecturesView';
 import { NotificationCenterModal } from './components/NotificationCenterModal';
 import { ReminderToast } from './components/ReminderToast';
+import { UrgentItemsModal } from './components/UrgentItemsModal';
+import { isTaskUrgent, isTaskObscenelyOverdue } from './utils/taskUtils';
 
 export default function App() {
   const [tasks, setTasks] = useState<TaskItem[]>(() => OfflineStorageService.getTasks());
   const [session, setSession] = useState<BrightspaceSession>(() => BrightspaceService.getSession());
   const [isOnline, setIsOnline] = useState<boolean>(() => OfflineStorageService.isOnline());
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'tasks' | 'calendar' | 'courses'>('tasks');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'calendar' | 'courses' | 'lectures'>('tasks');
 
   // Modals state
   const [isBrightspaceModalOpen, setIsBrightspaceModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isUrgentModalOpen, setIsUrgentModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskItem | null>(null);
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
 
@@ -179,6 +184,52 @@ export default function App() {
     CalendarService.downloadIcsCalendar(tasks, 'uottawa-tasks-sync.ics');
   };
 
+  const handleExtractReadingTasks = async (material: CourseMaterial, base64Data: string) => {
+    try {
+      const res = await fetch('/api/pdf/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64: base64Data })
+      });
+      const data = await res.json();
+      
+      if (!data.success || !data.tasks) {
+        throw new Error(data.error || 'Failed to extract tasks');
+      }
+
+      const newTasks: TaskItem[] = data.tasks.map((t: any, idx: number) => {
+        const course = session.availableCourses.find(c => c.id === material.courseId);
+        return {
+          id: `extracted-${Date.now()}-${idx}`,
+          title: t.title,
+          description: t.description + `\n\n(Extracted from: ${material.title})`,
+          courseCode: course ? course.code : 'General',
+          courseName: course ? course.name : 'Lectures & Readings',
+          dueDate: t.dueDate || '',
+          estimatedMinutes: t.estimatedMinutes || 60,
+          priority: 'medium',
+          status: 'pending',
+          source: 'manual',
+          reminders: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      });
+
+      if (newTasks.length > 0) {
+        let current = [...tasks, ...newTasks];
+        OfflineStorageService.saveTasks(current);
+        setTasks(current);
+        alert(`Successfully extracted ${newTasks.length} reading tasks!`);
+      } else {
+        alert('No actionable tasks or readings found in this document.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to extract reading tasks via AI.');
+    }
+  };
+
   const handleOpenGoogleCalendarSingle = (task: TaskItem) => {
     CalendarService.openInGoogleCalendar(task);
   };
@@ -205,13 +256,23 @@ export default function App() {
     await ReminderEngine.requestDesktopNotificationPermission();
   };
 
+  // Visible tasks filter out obscenely overdue tasks so they do not appear anywhere in the UI
+  const visibleTasks = useMemo(() => {
+    return tasks.filter((t) => !isTaskObscenelyOverdue(t));
+  }, [tasks]);
+
   // Filtered tasks calculation
   const filteredTasks = useMemo(() => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const todayEnd = todayStart + 24 * 60 * 60 * 1000;
 
-    return tasks.filter((t) => {
+    return visibleTasks.filter((t) => {
+      // Urgent filter
+      if (filters.onlyUrgent && !isTaskUrgent(t)) {
+        return false;
+      }
+
       // Course filter
       if (filters.courseFilter !== 'ALL' && t.courseCode !== filters.courseFilter) {
         return false;
@@ -222,18 +283,21 @@ export default function App() {
       if (filters.statusFilter === 'completed' && t.status !== 'completed') return false;
 
       // Priority filter
-      if (filters.priorityFilter !== 'ALL' && t.priority !== filters.priorityFilter) {
+      if (filters.priorityFilter === 'urgent') {
+        if (!isTaskUrgent(t)) return false;
+      } else if (filters.priorityFilter !== 'ALL' && t.priority !== filters.priorityFilter) {
         return false;
       }
 
       // Date Range filter
-      const dueTime = new Date(t.dueDate).getTime();
+      const hasDueDate = !!t.dueDate;
+      const dueTime = hasDueDate ? new Date(t.dueDate!).getTime() : NaN;
       if (filters.dateRange === 'today') {
-        if (dueTime < todayStart || dueTime > todayEnd) return false;
+        if (!hasDueDate || dueTime < todayStart || dueTime > todayEnd) return false;
       } else if (filters.dateRange === 'upcoming') {
-        if (dueTime <= todayEnd) return false;
+        if (!hasDueDate || dueTime <= todayEnd) return false;
       } else if (filters.dateRange === 'overdue') {
-        if (t.status === 'completed' || dueTime >= now.getTime()) return false;
+        if (!hasDueDate || t.status === 'completed' || dueTime >= now.getTime()) return false;
       }
 
       // Search Query
@@ -247,11 +311,15 @@ export default function App() {
 
       return true;
     });
-  }, [tasks, filters]);
+  }, [visibleTasks, filters]);
+
+  const urgentTasksCount = useMemo(() => {
+    return visibleTasks.filter((t) => isTaskUrgent(t)).length;
+  }, [visibleTasks]);
 
   const offlineModifiedCount = useMemo(() => {
-    return tasks.filter((t) => t.isOfflineModified || t.isOfflineCreated).length;
-  }, [tasks]);
+    return visibleTasks.filter((t) => t.isOfflineModified || t.isOfflineCreated).length;
+  }, [visibleTasks]);
 
   const unreadNotificationsCount = useMemo(() => {
     return notifications.filter((n) => !n.read).length;
@@ -271,11 +339,12 @@ export default function App() {
     >
       {/* Top Metrics / Overview */}
       <TopOverviewBanner
-        tasks={tasks}
+        tasks={visibleTasks}
         session={session}
         isOnline={isOnline}
         onExploreBrightspace={() => setIsBrightspaceModalOpen(true)}
         onSyncGoogleCalendarAll={handleDownloadFullCalendar}
+        onSelectUrgentItems={() => setIsUrgentModalOpen(true)}
       />
 
       {/* Main Tab Content */}
@@ -292,6 +361,8 @@ export default function App() {
             }}
             onDownloadIcs={handleDownloadFullCalendar}
             offlineModifiedCount={offlineModifiedCount}
+            urgentCount={urgentTasksCount}
+            onOpenUrgentInspector={() => setIsUrgentModalOpen(true)}
           />
 
           {/* Task List */}
@@ -340,7 +411,7 @@ export default function App() {
 
       {activeTab === 'calendar' && (
         <CalendarTimelineView
-          tasks={tasks}
+          tasks={visibleTasks}
           onOpenGoogleCalendar={handleOpenGoogleCalendarSingle}
           onEditTask={(t) => {
             setEditingTask(t);
@@ -352,9 +423,16 @@ export default function App() {
       {activeTab === 'courses' && (
         <CoursesView
           session={session}
-          tasks={tasks}
+          tasks={visibleTasks}
           onExploreBrightspace={() => setIsBrightspaceModalOpen(true)}
           onCreateTaskForCourse={handleCreateTaskForCourse}
+        />
+      )}
+
+      {activeTab === 'lectures' && (
+        <LecturesView
+          session={session}
+          onExtractTasks={handleExtractReadingTasks}
         />
       )}
 
@@ -378,6 +456,26 @@ export default function App() {
         session={session}
         onSessionChange={setSession}
         onImportTasks={handleImportBrightspaceTasks}
+      />
+
+      {/* Urgent Items Selector & Inspector Modal */}
+      <UrgentItemsModal
+        isOpen={isUrgentModalOpen}
+        onClose={() => setIsUrgentModalOpen(false)}
+        tasks={visibleTasks}
+        onToggleComplete={handleToggleComplete}
+        onEditTask={(task) => {
+          setEditingTask(task);
+          setIsEditModalOpen(true);
+        }}
+        onFilterToUrgentInMainList={() => {
+          setActiveTab('tasks');
+          setFilters((prev) => ({
+            ...prev,
+            onlyUrgent: true,
+            priorityFilter: 'ALL',
+          }));
+        }}
       />
 
       {/* Windows 11 Action Center Notification Drawer */}

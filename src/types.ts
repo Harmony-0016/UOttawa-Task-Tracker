@@ -15,7 +15,7 @@ export interface TaskItem {
   description: string;
   courseCode: string;
   courseName: string;
-  dueDate: string; // ISO string
+  dueDate?: string; // ISO string or empty/undefined for Optional
   estimatedMinutes: number;
   priority: TaskPriority;
   status: TaskStatus;
@@ -43,6 +43,22 @@ export interface BrightspaceCourse {
   activeTasksCount: number;
 }
 
+export interface CourseMaterial {
+  id: string;
+  courseId: string;
+  title: string;
+  type: 'pdf' | 'slideshow' | 'link';
+  url: string; // ObjectURL or actual link
+  createdAt: string;
+}
+
+export interface ExplorationLogEntry {
+  timestamp: string;
+  level: 'info' | 'success' | 'warn' | 'error';
+  message: string;
+  endpoint?: string;
+}
+
 export interface BrightspaceSession {
   isLoggedIn: boolean;
   studentName: string;
@@ -52,6 +68,8 @@ export interface BrightspaceSession {
   lastSyncTimestamp: string | null;
   activeSemester: string;
   availableCourses: BrightspaceCourse[];
+  feedUrl?: string; // Optional real personal calendar feed url
+  sessionCookie?: string; // Optional real d2lSessionVal cookie
 }
 
 export interface DesktopNotification {
@@ -70,7 +88,8 @@ export interface FilterOptions {
   searchQuery: string;
   courseFilter: string; // 'ALL' or specific course code
   statusFilter: 'ALL' | 'active' | 'completed';
-  priorityFilter: 'ALL' | TaskPriority;
+  priorityFilter: 'ALL' | TaskPriority | 'urgent';
   sourceFilter: 'ALL' | TaskSource;
   dateRange: 'ALL' | 'today' | 'upcoming' | 'overdue';
+  onlyUrgent?: boolean;
 }

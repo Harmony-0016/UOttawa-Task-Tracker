@@ -9,10 +9,12 @@ import {
   CheckCircle, 
   Circle, 
   CloudOff, 
-  GraduationCap
+  GraduationCap,
+  Flame
 } from 'lucide-react';
 import { TaskItem, TaskPriority } from '../types';
 import { CalendarService } from '../services/calendarService';
+import { isTaskUrgent, getUrgencyInfo } from '../utils/taskUtils';
 
 interface TaskCardProps {
   task: TaskItem;
@@ -28,11 +30,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onDelete,
 }) => {
   const isCompleted = task.status === 'completed';
-  const dueDate = new Date(task.dueDate);
+  const hasDueDate = !!task.dueDate;
+  const dueDate = hasDueDate ? new Date(task.dueDate!) : new Date();
   const now = new Date();
-  const diffHours = (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-  const isOverdue = !isCompleted && diffHours < 0;
-  const isDueToday = !isCompleted && diffHours >= 0 && diffHours <= 24;
+  const diffHours = hasDueDate ? (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60) : 0;
+  const isOverdue = hasDueDate && !isCompleted && diffHours < 0;
+  const isDueToday = hasDueDate && !isCompleted && diffHours >= 0 && diffHours <= 24;
+  const isUrgent = isTaskUrgent(task);
+  const urgency = getUrgencyInfo(task);
 
   const priorityColorMap: Record<TaskPriority, { bg: string; text: string; border: string }> = {
     high: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
@@ -50,6 +55,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const formatDueString = (): string => {
     if (isCompleted) {
       return `Completed on ${task.completedAt ? new Date(task.completedAt).toLocaleDateString() : 'earlier'}`;
+    }
+    if (!hasDueDate) {
+      return 'Optional (No Deadline)';
     }
     if (isOverdue) {
       return `Overdue by ${Math.abs(Math.round(diffHours))} hr(s)`;
@@ -71,6 +79,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       className={`group relative rounded-xl border transition-all duration-150 p-4 bg-white ${
         isCompleted
           ? 'opacity-70 bg-zinc-50/70 border-zinc-200'
+          : isUrgent
+          ? 'border-rose-300 shadow-xs hover:border-rose-400 bg-rose-50/20'
           : isOverdue
           ? 'border-rose-300 shadow-xs hover:border-rose-400'
           : 'border-zinc-200 hover:border-zinc-300 hover:shadow-xs'
@@ -109,6 +119,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               {task.priority}
             </span>
 
+            {/* Urgency Badge */}
+            {isUrgent && !isCompleted && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">
+                <Flame className="w-3 h-3 text-rose-600" />
+                {urgency.reason}
+              </span>
+            )}
+
             {/* Offline Badges */}
             {(task.isOfflineModified || task.isOfflineCreated) && (
               <span 
@@ -132,12 +150,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {/* Description */}
           {task.description && (
-            <p className="text-xs text-zinc-600 mt-1 line-clamp-2 leading-relaxed">
+            <div className="text-xs text-zinc-600 mt-2 leading-relaxed bg-zinc-50/80 rounded-md p-2.5 border border-zinc-100 whitespace-pre-wrap max-h-40 overflow-y-auto">
               {task.description}
-            </p>
+            </div>
           )}
 
-          {/* Metadata Footer: Due Date, Time Estimate, Reminders */}
+          {/* Metadata Footer: Due Date, Time Estimate, Reminders, Brightspace link */}
           <div className="flex items-center gap-4 text-xs text-zinc-500 mt-3 flex-wrap">
             <div className={`flex items-center gap-1.5 font-medium ${isOverdue ? 'text-rose-600' : isDueToday ? 'text-amber-700 font-semibold' : ''}`}>
               <Calendar className="w-3.5 h-3.5 shrink-0" />
@@ -161,6 +179,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   {task.reminders.map((r) => `${r.minutesBefore >= 60 ? `${r.minutesBefore / 60}h` : `${r.minutesBefore}m`}`).join(', ')} before
                 </span>
               </div>
+            )}
+
+            {task.brightspaceUrl && (
+              <a
+                href={task.brightspaceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#8f001a] hover:underline"
+              >
+                <span>Open in Brightspace</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
             )}
           </div>
         </div>

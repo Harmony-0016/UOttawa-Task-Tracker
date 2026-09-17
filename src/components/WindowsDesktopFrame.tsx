@@ -10,7 +10,8 @@ import {
   Minus, 
   Square, 
   X,
-  GraduationCap
+  GraduationCap,
+  BookOpen
 } from 'lucide-react';
 import { BrightspaceSession } from '../types';
 
@@ -19,8 +20,8 @@ interface WindowsDesktopFrameProps {
   isSyncing: boolean;
   unreadNotificationsCount: number;
   session: BrightspaceSession;
-  activeTab: 'tasks' | 'calendar' | 'courses';
-  onTabChange: (tab: 'tasks' | 'calendar' | 'courses') => void;
+  activeTab: 'tasks' | 'calendar' | 'courses' | 'lectures';
+  onTabChange: (tab: 'tasks' | 'calendar' | 'courses' | 'lectures') => void;
   onOpenNotifications: () => void;
   onOpenBrightspaceModal: () => void;
   onManualSync: () => void;
@@ -164,6 +165,19 @@ export const WindowsDesktopFrame: React.FC<WindowsDesktopFrameProps> = ({
           >
             <GraduationCap className="w-3.5 h-3.5 text-amber-600" />
             <span>uOttawa Courses</span>
+          </button>
+
+          <button
+            id="nav-tab-lectures"
+            onClick={() => onTabChange('lectures')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              activeTab === 'lectures'
+                ? 'bg-zinc-100 text-zinc-900 font-semibold border border-zinc-200'
+                : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Lectures & Readings</span>
           </button>
         </div>
 

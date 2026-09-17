@@ -42,10 +42,14 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
       setReminders(taskToEdit.reminders.length > 0 ? taskToEdit.reminders : [{ id: 'rem-1', minutesBefore: 60, triggered: false }]);
 
       // Format ISO to YYYY-MM-DDTHH:mm for datetime-local input
-      const d = new Date(taskToEdit.dueDate);
-      const tzOffset = d.getTimezoneOffset() * 60000;
-      const localISOTime = new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
-      setDueDateStr(localISOTime);
+      if (taskToEdit.dueDate) {
+        const d = new Date(taskToEdit.dueDate);
+        const tzOffset = d.getTimezoneOffset() * 60000;
+        const localISOTime = new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+        setDueDateStr(localISOTime);
+      } else {
+        setDueDateStr('');
+      }
     } else {
       setTitle('');
       setDescription('');
@@ -101,12 +105,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
       return;
     }
 
-    if (!dueDateStr) {
-      setValidationError('Please select a due date and time.');
-      return;
-    }
-
-    const isoDate = new Date(dueDateStr).toISOString();
+    const isoDate = dueDateStr ? new Date(dueDateStr).toISOString() : undefined;
     const now = new Date().toISOString();
 
     const taskPayload: TaskItem = {
@@ -230,12 +229,11 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
             <div>
               <label className="block text-xs font-semibold text-zinc-700 mb-1 flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-zinc-500" />
-                <span>Due Date & Time *</span>
+                <span>Due Date & Time (Optional)</span>
               </label>
               <input
                 id="task-due-date-input"
                 type="datetime-local"
-                required
                 value={dueDateStr}
                 onChange={(e) => setDueDateStr(e.target.value)}
                 className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 focus:outline-none focus:ring-2 focus:ring-[#8f001a]"
@@ -267,7 +265,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
             </label>
             <textarea
               id="task-description-input"
-              rows={3}
+              rows={5}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add requirements, rubric notes, zoom links, or submission details..."

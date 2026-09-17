@@ -6,9 +6,12 @@ import {
   Download, 
   Calendar as CalendarIcon, 
   CloudOff, 
-  Layers 
+  Layers,
+  AlertTriangle,
+  Flame,
+  SlidersHorizontal
 } from 'lucide-react';
-import { FilterOptions, BrightspaceCourse } from '../types';
+import { FilterOptions, BrightspaceCourse, TaskPriority } from '../types';
 
 interface TaskFilterBarProps {
   filters: FilterOptions;
@@ -17,6 +20,8 @@ interface TaskFilterBarProps {
   onOpenCreateTask: () => void;
   onDownloadIcs: () => void;
   offlineModifiedCount: number;
+  urgentCount: number;
+  onOpenUrgentInspector: () => void;
 }
 
 export const TaskFilterBar: React.FC<TaskFilterBarProps> = ({
@@ -26,10 +31,30 @@ export const TaskFilterBar: React.FC<TaskFilterBarProps> = ({
   onOpenCreateTask,
   onDownloadIcs,
   offlineModifiedCount,
+  urgentCount,
+  onOpenUrgentInspector,
 }) => {
+  const isUrgentActive = filters.onlyUrgent || filters.priorityFilter === 'high';
+
+  const handleToggleUrgent = () => {
+    if (filters.onlyUrgent) {
+      onFilterChange({
+        ...filters,
+        onlyUrgent: false,
+        priorityFilter: 'ALL',
+      });
+    } else {
+      onFilterChange({
+        ...filters,
+        onlyUrgent: true,
+        priorityFilter: 'ALL',
+      });
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl p-4 border border-zinc-200 shadow-xs space-y-3">
-      {/* Top Row: Search & Action Buttons */}
+      {/* Top Row: Search, Urgent Inspector, & Action Buttons */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative w-full sm:w-80">
@@ -44,8 +69,28 @@ export const TaskFilterBar: React.FC<TaskFilterBarProps> = ({
           />
         </div>
 
-        {/* Action Buttons: Export ICS & New Task */}
-        <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+        {/* Action Buttons: Urgent Inspector, Export ICS & New Task */}
+        <div className="flex items-center space-x-2 w-full sm:w-auto justify-end flex-wrap">
+          {/* Dedicated Urgent Items Selector Button */}
+          <button
+            id="open-urgent-inspector-btn"
+            onClick={onOpenUrgentInspector}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border transition-all ${
+              urgentCount > 0
+                ? 'bg-rose-50 border-rose-300 text-rose-800 hover:bg-rose-100'
+                : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:bg-zinc-100'
+            }`}
+            title="Inspect all urgent assignments and deadlines"
+          >
+            <AlertTriangle className={`w-3.5 h-3.5 ${urgentCount > 0 ? 'text-rose-600' : 'text-zinc-400'}`} />
+            <span>Select Urgent Items</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              urgentCount > 0 ? 'bg-rose-600 text-white' : 'bg-zinc-200 text-zinc-600'
+            }`}>
+              {urgentCount}
+            </span>
+          </button>
+
           <button
             id="export-calendar-filter-btn"
             onClick={onDownloadIcs}
@@ -67,12 +112,31 @@ export const TaskFilterBar: React.FC<TaskFilterBarProps> = ({
         </div>
       </div>
 
-      {/* Bottom Filter Chips: Courses, Date Range, Status */}
+      {/* Bottom Filter Chips: Urgent Quick Toggle, Courses, Priority, Date Range, Status */}
       <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-zinc-100 text-xs">
         <span className="text-zinc-400 font-medium flex items-center gap-1">
           <Filter className="w-3 h-3" />
           Filter:
         </span>
+
+        {/* Quick Urgent Only Filter Button */}
+        <button
+          id="toggle-urgent-filter-chip"
+          onClick={handleToggleUrgent}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all border ${
+            filters.onlyUrgent
+              ? 'bg-rose-600 text-white border-rose-600 shadow-xs ring-2 ring-rose-200'
+              : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
+          }`}
+        >
+          <Flame className={`w-3.5 h-3.5 ${filters.onlyUrgent ? 'text-white' : 'text-rose-600'}`} />
+          <span>Urgent Only</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+            filters.onlyUrgent ? 'bg-white/20 text-white' : 'bg-rose-200 text-rose-900 font-bold'
+          }`}>
+            {urgentCount}
+          </span>
+        </button>
 
         {/* Course Dropdown */}
         <select
@@ -88,6 +152,23 @@ export const TaskFilterBar: React.FC<TaskFilterBarProps> = ({
             </option>
           ))}
           <option value="Personal">Personal</option>
+        </select>
+
+        {/* Priority Filter Dropdown */}
+        <select
+          id="priority-filter-select"
+          value={filters.priorityFilter}
+          onChange={(e) => onFilterChange({ 
+            ...filters, 
+            priorityFilter: e.target.value as FilterOptions['priorityFilter'],
+            onlyUrgent: e.target.value === 'high' ? false : filters.onlyUrgent,
+          })}
+          className="px-2 py-1 rounded-md border border-zinc-200 bg-zinc-50 text-xs text-zinc-700 focus:ring-1 focus:ring-[#8f001a]"
+        >
+          <option value="ALL">All Priorities</option>
+          <option value="high">High Priority</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
         </select>
 
         {/* Date Range Chips */}
@@ -123,6 +204,24 @@ export const TaskFilterBar: React.FC<TaskFilterBarProps> = ({
             </button>
           ))}
         </div>
+
+        {/* Reset Filters if any active */}
+        {(filters.onlyUrgent || filters.courseFilter !== 'ALL' || filters.statusFilter !== 'ALL' || filters.priorityFilter !== 'ALL' || filters.dateRange !== 'ALL' || filters.searchQuery) && (
+          <button
+            onClick={() => onFilterChange({
+              searchQuery: '',
+              courseFilter: 'ALL',
+              statusFilter: 'ALL',
+              priorityFilter: 'ALL',
+              sourceFilter: 'ALL',
+              dateRange: 'ALL',
+              onlyUrgent: false,
+            })}
+            className="text-[11px] text-zinc-500 hover:text-zinc-800 underline px-1"
+          >
+            Clear filters
+          </button>
+        )}
 
         {/* Offline Modified Indicator */}
         {offlineModifiedCount > 0 && (
