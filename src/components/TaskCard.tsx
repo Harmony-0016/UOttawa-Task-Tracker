@@ -57,6 +57,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       return `Completed on ${(task.completedAt && !isNaN(new Date(task.completedAt).getTime())) ? new Date(task.completedAt).toLocaleDateString() : 'earlier'}`;
     }
     if (!hasDueDate) {
+      if (task.startDate && !isNaN(new Date(task.startDate).getTime())) {
+        const start = new Date(task.startDate);
+        return `Starts ${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+      }
       return 'Optional';
     }
     if (isOverdue) {

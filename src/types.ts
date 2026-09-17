@@ -10,6 +10,8 @@ export interface TaskReminder {
 }
 
 export interface TaskItem {
+  isOptional?: boolean;
+  startDate?: string;
   id: string;
   title: string;
   description: string;

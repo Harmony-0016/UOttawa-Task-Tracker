@@ -210,9 +210,15 @@ export function parseBrightspaceIcs(icsContent: string): TaskItem[] {
           }
         }
 
-        // If the assignment has a start date in the future, it is not yet available to the student
-        if (parsedStartDate && parsedStartDate.getTime() > Date.now()) {
-          continue; // Skip this assignment as it is not available yet
+        const isStartEvent = title.toLowerCase().includes('starts') || description.toLowerCase().includes('starts ');
+        let startDateIso = undefined;
+
+        if (isStartEvent && parsedStartDate) {
+          startDateIso = parsedStartDate.toISOString();
+          dueDate = ''; // Start events do not have a due date
+        } else if (parsedStartDate && parsedStartDate.getTime() > Date.now()) {
+          // If the assignment has a start date in the future, it is not yet available to the student
+          continue; 
         }
 
         const courseCode = extractCourseCode(title + ' ' + description);
@@ -227,8 +233,10 @@ export function parseBrightspaceIcs(icsContent: string): TaskItem[] {
           courseCode,
           courseName: courseCode,
           dueDate: dueDate ? dueDate : undefined,
+          startDate: startDateIso,
+          isOptional: !dueDate,
           estimatedMinutes: itemType === 'exam' ? 120 : itemType === 'lab' ? 90 : 60,
-          priority: itemType === 'exam' || itemType === 'assignment' ? 'high' : 'medium',
+          priority: !dueDate ? 'low' : (itemType === 'exam' || itemType === 'assignment' ? 'high' : 'medium'),
           status: 'pending',
           source: 'brightspace',
           brightspaceType: itemType,

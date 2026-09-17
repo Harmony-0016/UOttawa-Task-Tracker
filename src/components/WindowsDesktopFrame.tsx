@@ -11,7 +11,8 @@ import {
   Square, 
   X,
   GraduationCap,
-  LogOut
+  LogOut,
+  HelpCircle
 } from 'lucide-react';
 import { BrightspaceSession } from '../types';
 
@@ -24,6 +25,7 @@ interface WindowsDesktopFrameProps {
   onTabChange: (tab: 'tasks' | 'calendar' | 'courses') => void;
   onOpenNotifications: () => void;
   onOpenBrightspaceModal: () => void;
+  onOpenTutorial: () => void;
   onManualSync: () => void;
   onSignOut?: () => void;
   children: React.ReactNode;
@@ -38,6 +40,7 @@ export const WindowsDesktopFrame: React.FC<WindowsDesktopFrameProps> = ({
   onTabChange,
   onOpenNotifications,
   onOpenBrightspaceModal,
+  onOpenTutorial,
   onManualSync,
   onSignOut,
   children,
@@ -88,6 +91,15 @@ export const WindowsDesktopFrame: React.FC<WindowsDesktopFrameProps> = ({
 
         {/* Right: Notification Bell & Windows Window Controls */}
         <div className="flex items-center space-x-1">
+          <button
+            onClick={onOpenTutorial}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:text-sky-700 hover:bg-sky-50 rounded transition-colors mr-1"
+            title="Tutorial / Help"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Help</span>
+          </button>
+
           {/* Sign Out */}
           {onSignOut && (
             <button

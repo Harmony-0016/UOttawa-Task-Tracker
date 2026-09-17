@@ -26,6 +26,7 @@ import { TopOverviewBanner } from './components/TopOverviewBanner';
 import { TaskFilterBar } from './components/TaskFilterBar';
 import { TaskCard } from './components/TaskCard';
 import { TaskEditModal } from './components/TaskEditModal';
+import { TutorialModal } from './components/TutorialModal';
 import { BrightspaceExplorerModal } from './components/BrightspaceExplorerModal';
 import { CalendarTimelineView } from './components/CalendarTimelineView';
 import { CoursesView } from './components/CoursesView';
@@ -66,6 +67,7 @@ function AuthenticatedApp() {
 
   // Modals state
   const [isBrightspaceModalOpen, setIsBrightspaceModalOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUrgentModalOpen, setIsUrgentModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskItem | null>(null);
@@ -338,6 +340,7 @@ function AuthenticatedApp() {
       onTabChange={setActiveTab}
       onOpenNotifications={() => setIsNotificationCenterOpen(true)}
       onOpenBrightspaceModal={() => setIsBrightspaceModalOpen(true)}
+      onOpenTutorial={() => setIsTutorialOpen(true)}
       onManualSync={handleManualSync}
       onSignOut={handleSignOut}
     >
@@ -447,6 +450,7 @@ function AuthenticatedApp() {
       />
 
       {/* Brightspace Exploration & Auth Modal */}
+      <TutorialModal isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} />
       <BrightspaceExplorerModal
         isOpen={isBrightspaceModalOpen}
         onClose={() => setIsBrightspaceModalOpen(false)}
