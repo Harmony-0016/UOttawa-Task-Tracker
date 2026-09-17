@@ -5,7 +5,9 @@ import { TaskItem, TaskPriority, BrightspaceItemType } from '../types';
  */
 export function isTaskObscenelyOverdue(task: TaskItem): boolean {
   if (task.status === 'completed') return false;
-  const dueTime = task.dueDate ? new Date(task.dueDate).getTime() : NaN;
+  if (!task.dueDate) return false;
+  
+  const dueTime = new Date(task.dueDate).getTime();
   if (isNaN(dueTime)) return false;
   
   const now = Date.now();
@@ -22,6 +24,7 @@ export function isTaskObscenelyOverdue(task: TaskItem): boolean {
  */
 export function isTaskUrgent(task: TaskItem): boolean {
   if (task.status === 'completed') return false;
+  if (task.priority === 'low') return false; // Low priority (optional/non-mandatory) tasks are never urgent
   if (isTaskObscenelyOverdue(task)) return false; // Ignore obscenely overdue tasks
   if (task.priority === 'high') return true;
 
@@ -60,13 +63,23 @@ export function getUrgencyInfo(task: TaskItem): UrgencyInfo {
     };
   }
 
+  if (task.priority === 'low') {
+    return {
+      isUrgent: false,
+      reason: 'Optional / Not Mandatory',
+      badgeColor: 'bg-zinc-100 text-zinc-500',
+      hoursRemaining,
+      timeLabel: hasDueDate ? (isOverdue ? 'Past suggested time' : 'No strict deadline') : 'Optional',
+    };
+  }
+
   if (!hasDueDate) {
     return {
       isUrgent: task.priority === 'high',
       reason: task.priority === 'high' ? 'High Priority' : 'Optional',
       badgeColor: task.priority === 'high' ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-zinc-100 text-zinc-500',
       hoursRemaining: Infinity,
-      timeLabel: 'No deadline',
+      timeLabel: 'Optional',
     };
   }
 
@@ -173,8 +186,8 @@ export function parseBrightspaceIcs(icsContent: string): TaskItem[] {
           .replace(/\\,/g, ',')
           .replace(/\\;/g, ';');
 
-        let dueDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-        const rawDate = currentEvent['DTEND'] || currentEvent['DTSTART'] || currentEvent['DUE'];
+        let dueDate = '';
+        const rawDate = currentEvent['DTEND'] || currentEvent['DUE'];
 
         let parsedStartDate: Date | null = null;
         if (currentEvent['DTSTART']) {
@@ -213,7 +226,7 @@ export function parseBrightspaceIcs(icsContent: string): TaskItem[] {
           description: description || `Course assignment imported from uOttawa Brightspace portal.`,
           courseCode,
           courseName: courseCode,
-          dueDate,
+          dueDate: dueDate ? dueDate : undefined,
           estimatedMinutes: itemType === 'exam' ? 120 : itemType === 'lab' ? 90 : 60,
           priority: itemType === 'exam' || itemType === 'assignment' ? 'high' : 'medium',
           status: 'pending',

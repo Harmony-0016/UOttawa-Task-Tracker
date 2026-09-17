@@ -178,7 +178,7 @@ export const UrgentItemsModal: React.FC<UrgentItemsModalProps> = ({
             urgentTasks.map((task) => {
               const isSelected = selectedTaskIds.has(task.id);
               const urgency = getUrgencyInfo(task);
-              const hasDueDate = !!task.dueDate;
+              const hasDueDate = !!task.dueDate && !isNaN(new Date(task.dueDate).getTime());
               const dueDate = hasDueDate ? new Date(task.dueDate!) : new Date();
               const formattedDate = hasDueDate ? dueDate.toLocaleDateString(undefined, {
                 weekday: 'short',

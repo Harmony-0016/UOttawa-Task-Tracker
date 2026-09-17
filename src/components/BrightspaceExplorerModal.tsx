@@ -6,8 +6,6 @@ import {
   CheckCircle2, 
   BookOpen, 
   ExternalLink, 
-  LogIn, 
-  LogOut, 
   Loader2, 
   Calendar,
   Layers,
@@ -82,15 +80,6 @@ export const BrightspaceExplorerModal: React.FC<BrightspaceExplorerModalProps> =
     } finally {
       setIsExploring(false);
     }
-  };
-
-  const handleToggleLogin = () => {
-    const nextState = !session.isLoggedIn;
-    const updated = BrightspaceService.setLoggedIn(nextState);
-    onSessionChange(updated);
-    setErrorMessage(null);
-    setDiscoveredTasks(null);
-    setLogs([]);
   };
 
   const handleSaveFeedUrl = (e: React.FormEvent) => {
@@ -182,48 +171,20 @@ export const BrightspaceExplorerModal: React.FC<BrightspaceExplorerModalProps> =
           {/* Session Banner */}
           <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center space-x-3">
-              <div className={`w-3.5 h-3.5 rounded-full ${session.isLoggedIn ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-rose-500 ring-4 ring-rose-100'}`} />
+              <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-zinc-900">
-                    {session.isLoggedIn ? session.studentName : 'Not Authenticated'}
+                    {session.studentName}
                   </span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${session.isLoggedIn ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-                    {session.isLoggedIn ? 'uOttawa SSO Active' : 'Logged Out'}
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800">
+                    uOttawa SSO Active
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500">
-                  {session.isLoggedIn
-                    ? `${session.studentEmail} • ID: ${session.studentId} • ${session.activeSemester}`
-                    : 'No valid uOttawa single sign-on session found'}
+                  {session.studentEmail} • ID: {session.studentId} • {session.activeSemester}
                 </p>
               </div>
-            </div>
-
-            {/* Login / Logout Toggle Button to verify both requirements */}
-            <div className="flex items-center gap-2">
-              <button
-                id="toggle-brightspace-session-btn"
-                onClick={handleToggleLogin}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                  session.isLoggedIn
-                    ? 'text-zinc-600 hover:text-rose-700 bg-white border border-zinc-200 hover:bg-rose-50'
-                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-                }`}
-                title={session.isLoggedIn ? "Test logged out behavior" : "Authenticate uOttawa session"}
-              >
-                {session.isLoggedIn ? (
-                  <>
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Simulate Log Out</span>
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="w-3.5 h-3.5" />
-                    <span>Sign In as Student</span>
-                  </>
-                )}
-              </button>
             </div>
           </div>
 
@@ -235,19 +196,10 @@ export const BrightspaceExplorerModal: React.FC<BrightspaceExplorerModalProps> =
             >
               <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
               <div className="space-y-1 flex-1">
-                <h4 className="text-sm font-bold text-rose-900">Brightspace Authentication Error</h4>
+                <h4 className="text-sm font-bold text-rose-900">Brightspace Error</h4>
                 <p className="text-xs text-rose-700 leading-relaxed font-medium">
                   {errorMessage}
                 </p>
-                <div className="pt-2 flex items-center gap-2">
-                  <button
-                    onClick={handleToggleLogin}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 px-3 py-1.5 rounded-md shadow-2xs transition-colors"
-                  >
-                    <LogIn className="w-3.5 h-3.5" />
-                    Sign In to uOttawa Account
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -352,7 +304,7 @@ export const BrightspaceExplorerModal: React.FC<BrightspaceExplorerModalProps> =
                 <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                   Active uOttawa Courses ({session.availableCourses.length})
                 </span>
-                <span className="text-xs text-zinc-400">Semester: Winter 2026</span>
+                <span className="text-xs text-zinc-400">Semester: {session.activeSemester}</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -408,12 +360,13 @@ export const BrightspaceExplorerModal: React.FC<BrightspaceExplorerModalProps> =
                 {discoveredTasks.map((task) => {
                   const isSelected = selectedTaskIds.has(task.id);
                   const isUrgent = isTaskUrgent(task);
-                  const dueDateFormatted = new Date(task.dueDate).toLocaleDateString(undefined, {
+                  const hasValidDate = task.dueDate && !isNaN(new Date(task.dueDate).getTime());
+                  const dueDateFormatted = hasValidDate ? new Date(task.dueDate!).toLocaleDateString(undefined, {
                     month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit',
-                  });
+                  }) : 'Optional';
 
                   return (
                     <div

@@ -5,44 +5,64 @@ const BRIGHTSPACE_STORAGE_KEY = 'uottawa_brightspace_session_v1';
 
 export const DEFAULT_UOTTAWA_COURSES: BrightspaceCourse[] = [
   {
-    id: 'uottawa-csi2110',
-    code: 'CSI 2110',
-    name: 'Data Structures and Algorithms',
-    instructor: 'Dr. Michael Adams',
-    semester: 'Winter 2026',
-    color: '#0284c7', // Sky 600
-    unreadAnnouncements: 2,
-    activeTasksCount: 3,
-  },
-  {
-    id: 'uottawa-seg3103',
-    code: 'SEG 3103',
-    name: 'Software Quality Assurance',
-    instructor: 'Dr. Stéphane Somé',
-    semester: 'Winter 2026',
-    color: '#8b5cf6', // Violet 500
-    unreadAnnouncements: 1,
-    activeTasksCount: 2,
-  },
-  {
-    id: 'uottawa-mat1320',
-    code: 'MAT 1320',
-    name: 'Calculus I & Mathematical Modeling',
-    instructor: 'Dr. Paul Desrosiers',
-    semester: 'Winter 2026',
+    id: 'uottawa-mat2322',
+    code: 'MAT 2322',
+    name: 'Calculus III For Engineers',
+    instructor: 'Unknown Instructor',
+    semester: 'Fall 2026',
     color: '#ea580c', // Orange 600
     unreadAnnouncements: 0,
-    activeTasksCount: 2,
+    activeTasksCount: 0,
   },
   {
-    id: 'uottawa-ceg3185',
-    code: 'CEG 3185',
-    name: 'Introduction to Telecommunications',
-    instructor: 'Dr. Carlisle Adams',
-    semester: 'Winter 2026',
-    color: '#059669', // Emerald 600
+    id: 'uottawa-ceg2136',
+    code: 'CEG 2136',
+    name: 'Computer Architecture I',
+    instructor: 'Unknown Instructor',
+    semester: 'Fall 2026',
+    color: '#0284c7', // Sky 600
     unreadAnnouncements: 3,
-    activeTasksCount: 2,
+    activeTasksCount: 0,
+  },
+  {
+    id: 'uottawa-elg2138',
+    code: 'ELG 2138',
+    name: 'Circuit Theory I',
+    instructor: 'Unknown Instructor',
+    semester: 'Fall 2026',
+    color: '#059669', // Emerald 600
+    unreadAnnouncements: 0,
+    activeTasksCount: 0,
+  },
+  {
+    id: 'uottawa-seg2105',
+    code: 'SEG 2105',
+    name: 'Intro To Software Engineering',
+    instructor: 'Unknown Instructor',
+    semester: 'Fall 2026',
+    color: '#8b5cf6', // Violet 500
+    unreadAnnouncements: 0,
+    activeTasksCount: 0,
+  },
+  {
+    id: 'uottawa-eng1112',
+    code: 'ENG 1112',
+    name: 'Technical Report Writing',
+    instructor: 'Unknown Instructor',
+    semester: 'Fall 2026',
+    color: '#e11d48', // Rose 600
+    unreadAnnouncements: 0,
+    activeTasksCount: 0,
+  },
+  {
+    id: 'uottawa-csi2110',
+    code: 'CSI 2110',
+    name: 'Data Structures And Algorithms',
+    instructor: 'Unknown Instructor',
+    semester: 'Fall 2026',
+    color: '#d97706', // Amber 600
+    unreadAnnouncements: 0,
+    activeTasksCount: 0,
   },
 ];
 
@@ -59,7 +79,7 @@ export const REAL_UOTTAWA_ASSIGNMENTS: Omit<TaskItem, 'id' | 'createdAt' | 'upda
     title: 'Lab 4: AVL Balanced Trees & Priority Queue Implementation',
     description: 'Implement AVL tree rebalancing algorithms (single & double rotations) and min-max priority queues. Submit zip file to Brightspace dropbox before 11:59 PM.',
     courseCode: 'CSI 2110',
-    courseName: 'Data Structures and Algorithms',
+    courseName: 'Data Structures And Algorithms',
     dueDate: createIsoDate(0, 23, 59), // Due TODAY - Urgent!
     estimatedMinutes: 90,
     priority: 'high',
@@ -72,8 +92,8 @@ export const REAL_UOTTAWA_ASSIGNMENTS: Omit<TaskItem, 'id' | 'createdAt' | 'upda
   {
     title: 'Automated Test Suite Plan (JUnit 5 & Mockito Coverage)',
     description: 'Prepare test plan document detailing unit test coverage, branch condition testing, and boundary value analysis for Course Project Milestone 1.',
-    courseCode: 'SEG 3103',
-    courseName: 'Software Quality Assurance',
+    courseCode: 'SEG 2105',
+    courseName: 'Intro To Software Engineering',
     dueDate: createIsoDate(1, 17, 0), // Due Tomorrow - Urgent!
     estimatedMinutes: 120,
     priority: 'high',
@@ -81,13 +101,13 @@ export const REAL_UOTTAWA_ASSIGNMENTS: Omit<TaskItem, 'id' | 'createdAt' | 'upda
     source: 'brightspace',
     brightspaceType: 'assignment',
     brightspaceUrl: 'https://uottawa.brightspace.com/d2l/lms/dropbox/user/folder_submit_files.d2l?ou=418903&db=98122',
-    brightspaceCourseId: 'uottawa-seg3103',
+    brightspaceCourseId: 'uottawa-seg2105',
   },
   {
     title: 'Brightspace Online Quiz 3: Integration by Parts & Series Convergence',
     description: 'Complete the online 45-minute timed quiz on D2L Quizzes portal. One double-sided hand-written formula sheet allowed.',
-    courseCode: 'MAT 1320',
-    courseName: 'Calculus I & Mathematical Modeling',
+    courseCode: 'MAT 2322',
+    courseName: 'Calculus III For Engineers',
     dueDate: createIsoDate(2, 14, 0),
     estimatedMinutes: 45,
     priority: 'medium',
@@ -95,13 +115,13 @@ export const REAL_UOTTAWA_ASSIGNMENTS: Omit<TaskItem, 'id' | 'createdAt' | 'upda
     source: 'brightspace',
     brightspaceType: 'quiz',
     brightspaceUrl: 'https://uottawa.brightspace.com/d2l/lms/quizzes/user/quizzes_list.d2l?ou=418904',
-    brightspaceCourseId: 'uottawa-mat1320',
+    brightspaceCourseId: 'uottawa-mat2322',
   },
   {
     title: 'Wireshark Packet Analysis Lab: TCP Handshake & TLS 1.3 Latency',
     description: 'Analyze network pcap capture dump from campus core switch. Calculate round-trip time, window size scaling, and TLS handshake exchanges.',
-    courseCode: 'CEG 3185',
-    courseName: 'Introduction to Telecommunications',
+    courseCode: 'CEG 2136',
+    courseName: 'Computer Architecture I',
     dueDate: createIsoDate(3, 23, 59),
     estimatedMinutes: 75,
     priority: 'medium',
@@ -109,13 +129,13 @@ export const REAL_UOTTAWA_ASSIGNMENTS: Omit<TaskItem, 'id' | 'createdAt' | 'upda
     source: 'brightspace',
     brightspaceType: 'lab',
     brightspaceUrl: 'https://uottawa.brightspace.com/d2l/lms/dropbox/user/folder_submit_files.d2l?ou=418905&db=98124',
-    brightspaceCourseId: 'uottawa-ceg3185',
+    brightspaceCourseId: 'uottawa-ceg2136',
   },
   {
     title: 'Chapter 5 Reading: Red-Black Trees & Multiway Search (Sections 5.1 - 5.4)',
     description: 'Read Sections 5.1 through 5.4 in Goodrich & Tamassia textbook before Thursday morning lecture discussion.',
     courseCode: 'CSI 2110',
-    courseName: 'Data Structures and Algorithms',
+    courseName: 'Data Structures And Algorithms',
     dueDate: createIsoDate(2, 8, 30),
     estimatedMinutes: 60,
     priority: 'low',
@@ -128,8 +148,8 @@ export const REAL_UOTTAWA_ASSIGNMENTS: Omit<TaskItem, 'id' | 'createdAt' | 'upda
   {
     title: 'Discussion Board: Mutation Testing vs Equivalence Partitioning in SQA',
     description: 'Post your original analysis (min 250 words) on when mutation testing is worth the CPU cost, and critique at least one peer response.',
-    courseCode: 'SEG 3103',
-    courseName: 'Software Quality Assurance',
+    courseCode: 'SEG 2105',
+    courseName: 'Intro To Software Engineering',
     dueDate: createIsoDate(4, 23, 59),
     estimatedMinutes: 40,
     priority: 'low',
@@ -137,13 +157,13 @@ export const REAL_UOTTAWA_ASSIGNMENTS: Omit<TaskItem, 'id' | 'createdAt' | 'upda
     source: 'brightspace',
     brightspaceType: 'discussion',
     brightspaceUrl: 'https://uottawa.brightspace.com/d2l/le/418903/discussions/List',
-    brightspaceCourseId: 'uottawa-seg3103',
+    brightspaceCourseId: 'uottawa-seg2105',
   },
   {
     title: 'CSI 2110 Midterm Review & Problem Set 2 (Graph Theory & Dijkstra)',
     description: 'Comprehensive problem set covering asymptotic complexity bounds, binary search trees, and Dijkstra shortest path algorithm implementations.',
     courseCode: 'CSI 2110',
-    courseName: 'Data Structures and Algorithms',
+    courseName: 'Data Structures And Algorithms',
     dueDate: createIsoDate(5, 20, 0),
     estimatedMinutes: 150,
     priority: 'high',
@@ -166,7 +186,14 @@ export class BrightspaceService {
     try {
       const stored = localStorage.getItem(BRIGHTSPACE_STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const session = JSON.parse(stored);
+        // Force upgrade outdated mockup
+        if (session.activeSemester === 'Winter 2026') {
+          session.activeSemester = 'Fall 2026';
+          session.availableCourses = DEFAULT_UOTTAWA_COURSES;
+          this.saveSession(session);
+        }
+        return session;
       }
     } catch {
       // ignore parsing error
@@ -179,7 +206,7 @@ export class BrightspaceService {
       studentId: '300298144',
       institution: "University of Ottawa / Université d'Ottawa",
       lastSyncTimestamp: new Date().toISOString(),
-      activeSemester: 'Winter 2026',
+      activeSemester: 'Fall 2026',
       availableCourses: DEFAULT_UOTTAWA_COURSES,
       feedUrl: '',
     };
@@ -190,19 +217,6 @@ export class BrightspaceService {
 
   static saveSession(session: BrightspaceSession): void {
     localStorage.setItem(BRIGHTSPACE_STORAGE_KEY, JSON.stringify(session));
-  }
-
-  /**
-   * Sets login state. Used to toggle or test logged in vs logged out.
-   */
-  static setLoggedIn(isLoggedIn: boolean): BrightspaceSession {
-    const session = this.getSession();
-    session.isLoggedIn = isLoggedIn;
-    if (isLoggedIn) {
-      session.lastSyncTimestamp = new Date().toISOString();
-    }
-    this.saveSession(session);
-    return session;
   }
 
   /**
@@ -242,15 +256,6 @@ export class BrightspaceService {
 
     emitLog('info', 'Connecting to uOttawa Brightspace gateway (uottawa.brightspace.com)...', 'https://uottawa.brightspace.com');
     await new Promise((r) => setTimeout(r, 220));
-
-    // STRICT REQUIREMENT: Check if logged in
-    if (!session.isLoggedIn) {
-      emitLog('error', 'HTTP 401 Unauthorized: No active uOttawa Single Sign-On cookie or session ticket found.', '/d2l/api/lp/1.43/users/whoami');
-      throw new Error('You are not logged in to uOttawa Brightspace. Please sign in to authenticate your uOttawa Brightspace session before exploring coursework.');
-    }
-
-    emitLog('info', 'Verifying active Single Sign-On authentication session tokens...', '/d2l/api/lp/1.43/users/whoami');
-    await new Promise((r) => setTimeout(r, 260));
 
     // If a custom real Brightspace calendar feed URL was provided, attempt live fetch
     if (!session.feedUrl || !session.feedUrl.startsWith('http')) {

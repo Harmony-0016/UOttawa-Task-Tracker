@@ -11,7 +11,7 @@ import {
   Square, 
   X,
   GraduationCap,
-  BookOpen
+  LogOut
 } from 'lucide-react';
 import { BrightspaceSession } from '../types';
 
@@ -20,11 +20,12 @@ interface WindowsDesktopFrameProps {
   isSyncing: boolean;
   unreadNotificationsCount: number;
   session: BrightspaceSession;
-  activeTab: 'tasks' | 'calendar' | 'courses' | 'lectures';
-  onTabChange: (tab: 'tasks' | 'calendar' | 'courses' | 'lectures') => void;
+  activeTab: 'tasks' | 'calendar' | 'courses';
+  onTabChange: (tab: 'tasks' | 'calendar' | 'courses') => void;
   onOpenNotifications: () => void;
   onOpenBrightspaceModal: () => void;
   onManualSync: () => void;
+  onSignOut?: () => void;
   children: React.ReactNode;
 }
 
@@ -38,6 +39,7 @@ export const WindowsDesktopFrame: React.FC<WindowsDesktopFrameProps> = ({
   onOpenNotifications,
   onOpenBrightspaceModal,
   onManualSync,
+  onSignOut,
   children,
 }) => {
   return (
@@ -86,6 +88,18 @@ export const WindowsDesktopFrame: React.FC<WindowsDesktopFrameProps> = ({
 
         {/* Right: Notification Bell & Windows Window Controls */}
         <div className="flex items-center space-x-1">
+          {/* Sign Out */}
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors mr-2"
+              title="Sign Out"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+          )}
+
           <button
             id="notification-center-btn"
             onClick={onOpenNotifications}
@@ -166,19 +180,6 @@ export const WindowsDesktopFrame: React.FC<WindowsDesktopFrameProps> = ({
             <GraduationCap className="w-3.5 h-3.5 text-amber-600" />
             <span>uOttawa Courses</span>
           </button>
-
-          <button
-            id="nav-tab-lectures"
-            onClick={() => onTabChange('lectures')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              activeTab === 'lectures'
-                ? 'bg-zinc-100 text-zinc-900 font-semibold border border-zinc-200'
-                : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Lectures & Readings</span>
-          </button>
         </div>
 
         {/* Brightspace Exploration CTA Button */}
@@ -190,9 +191,6 @@ export const WindowsDesktopFrame: React.FC<WindowsDesktopFrameProps> = ({
           >
             <Compass className="w-3.5 h-3.5 animate-pulse" />
             <span>Explore Brightspace</span>
-            {session.isLoggedIn && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" title="Brightspace session active" />
-            )}
           </button>
         </div>
       </nav>

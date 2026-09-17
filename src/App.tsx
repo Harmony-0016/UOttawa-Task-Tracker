@@ -29,18 +29,40 @@ import { TaskEditModal } from './components/TaskEditModal';
 import { BrightspaceExplorerModal } from './components/BrightspaceExplorerModal';
 import { CalendarTimelineView } from './components/CalendarTimelineView';
 import { CoursesView } from './components/CoursesView';
-import { LecturesView } from './components/LecturesView';
 import { NotificationCenterModal } from './components/NotificationCenterModal';
 import { ReminderToast } from './components/ReminderToast';
 import { UrgentItemsModal } from './components/UrgentItemsModal';
 import { isTaskUrgent, isTaskObscenelyOverdue } from './utils/taskUtils';
 
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from './firebase';
+import { FirestoreService } from './services/firestoreService';
+import { LandingScreen } from './components/LandingScreen';
+
 export default function App() {
-  const [tasks, setTasks] = useState<TaskItem[]>(() => OfflineStorageService.getTasks());
+  const [user, loading] = useAuthState(auth);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-800"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LandingScreen />;
+  }
+
+  return <AuthenticatedApp />;
+}
+
+function AuthenticatedApp() {
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [session, setSession] = useState<BrightspaceSession>(() => BrightspaceService.getSession());
   const [isOnline, setIsOnline] = useState<boolean>(() => OfflineStorageService.isOnline());
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'tasks' | 'calendar' | 'courses' | 'lectures'>('tasks');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'calendar' | 'courses'>('tasks');
 
   // Modals state
   const [isBrightspaceModalOpen, setIsBrightspaceModalOpen] = useState(false);
@@ -70,11 +92,6 @@ export default function App() {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      // Auto-sync any offline modifications when reconnecting
-      const { syncedCount, updatedTasks } = OfflineStorageService.syncOfflineChanges();
-      if (syncedCount > 0) {
-        setTasks(updatedTasks);
-      }
     };
 
     const handleOffline = () => {
@@ -83,10 +100,16 @@ export default function App() {
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    
+    // Subscribe to Firestore tasks
+    const unsubscribe = FirestoreService.subscribeToTasks((fetchedTasks) => {
+      setTasks(fetchedTasks);
+    });
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      unsubscribe();
     };
   }, []);
 
@@ -113,23 +136,19 @@ export default function App() {
   const handleManualSync = () => {
     setIsSyncing(true);
     setTimeout(() => {
-      const { updatedTasks } = OfflineStorageService.syncOfflineChanges();
-      setTasks(updatedTasks);
       ReminderEngine.evaluateReminders();
       setIsSyncing(false);
     }, 600);
   };
 
-  // Task Operations (Offline Supported)
+  // Task Operations (Offline Supported via Firestore native cache)
   const handleSaveTask = (task: TaskItem) => {
-    const updated = OfflineStorageService.upsertTask(task);
-    setTasks(updated);
+    FirestoreService.saveTask(task);
     setEditingTask(null);
   };
 
   const handleDeleteTask = (taskId: string) => {
-    const updated = OfflineStorageService.deleteTask(taskId);
-    setTasks(updated);
+    FirestoreService.deleteTask(taskId);
   };
 
   const handleToggleComplete = (task: TaskItem) => {
@@ -139,14 +158,15 @@ export default function App() {
       status: isNowCompleted ? 'completed' : 'pending',
       completedAt: isNowCompleted ? new Date().toISOString() : undefined,
     };
-    const updatedList = OfflineStorageService.upsertTask(updatedTask);
-    setTasks(updatedList);
+    FirestoreService.saveTask(updatedTask);
   };
 
   // Import tasks discovered from Brightspace
   const handleImportBrightspaceTasks = (importedTasks: TaskItem[]) => {
     let current = [...tasks];
     importedTasks.forEach((imported) => {
+      FirestoreService.saveTask(imported);
+      
       const existingIdx = current.findIndex((t) => t.id === imported.id || (t.title === imported.title && t.courseCode === imported.courseCode));
       if (existingIdx >= 0) {
         current[existingIdx] = imported;
@@ -155,8 +175,35 @@ export default function App() {
       }
     });
 
-    OfflineStorageService.saveTasks(current);
     setTasks(current);
+
+    // Dynamically update available courses based on what is found in Brightspace tasks
+    let sessionChanged = false;
+    let updatedCourses = [...session.availableCourses];
+    const existingCodes = new Set(updatedCourses.map((c) => c.code));
+
+    importedTasks.forEach((t) => {
+      if (t.courseCode && t.courseCode !== 'uOttawa General' && !existingCodes.has(t.courseCode)) {
+        existingCodes.add(t.courseCode);
+        updatedCourses.push({
+          id: `uottawa-${t.courseCode.toLowerCase().replace(/\s+/g, '')}`,
+          code: t.courseCode,
+          name: t.courseName || t.courseCode,
+          instructor: 'Unknown Instructor',
+          semester: session.activeSemester,
+          color: '#64748b', // Slate 500 fallback color
+          unreadAnnouncements: 0,
+          activeTasksCount: 0,
+        });
+        sessionChanged = true;
+      }
+    });
+
+    if (sessionChanged) {
+      const updatedSession = { ...session, availableCourses: updatedCourses };
+      BrightspaceService.saveSession(updatedSession);
+      setSession(updatedSession);
+    }
   };
 
   // Open task editor with preset course
@@ -182,52 +229,6 @@ export default function App() {
   // Calendar exports
   const handleDownloadFullCalendar = () => {
     CalendarService.downloadIcsCalendar(tasks, 'uottawa-tasks-sync.ics');
-  };
-
-  const handleExtractReadingTasks = async (material: CourseMaterial, base64Data: string) => {
-    try {
-      const res = await fetch('/api/pdf/parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ base64: base64Data })
-      });
-      const data = await res.json();
-      
-      if (!data.success || !data.tasks) {
-        throw new Error(data.error || 'Failed to extract tasks');
-      }
-
-      const newTasks: TaskItem[] = data.tasks.map((t: any, idx: number) => {
-        const course = session.availableCourses.find(c => c.id === material.courseId);
-        return {
-          id: `extracted-${Date.now()}-${idx}`,
-          title: t.title,
-          description: t.description + `\n\n(Extracted from: ${material.title})`,
-          courseCode: course ? course.code : 'General',
-          courseName: course ? course.name : 'Lectures & Readings',
-          dueDate: t.dueDate || '',
-          estimatedMinutes: t.estimatedMinutes || 60,
-          priority: 'medium',
-          status: 'pending',
-          source: 'manual',
-          reminders: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-      });
-
-      if (newTasks.length > 0) {
-        let current = [...tasks, ...newTasks];
-        OfflineStorageService.saveTasks(current);
-        setTasks(current);
-        alert(`Successfully extracted ${newTasks.length} reading tasks!`);
-      } else {
-        alert('No actionable tasks or readings found in this document.');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Failed to extract reading tasks via AI.');
-    }
   };
 
   const handleOpenGoogleCalendarSingle = (task: TaskItem) => {
@@ -290,7 +291,7 @@ export default function App() {
       }
 
       // Date Range filter
-      const hasDueDate = !!t.dueDate;
+      const hasDueDate = !!t.dueDate && !isNaN(new Date(t.dueDate).getTime());
       const dueTime = hasDueDate ? new Date(t.dueDate!).getTime() : NaN;
       if (filters.dateRange === 'today') {
         if (!hasDueDate || dueTime < todayStart || dueTime > todayEnd) return false;
@@ -317,13 +318,15 @@ export default function App() {
     return visibleTasks.filter((t) => isTaskUrgent(t)).length;
   }, [visibleTasks]);
 
-  const offlineModifiedCount = useMemo(() => {
-    return visibleTasks.filter((t) => t.isOfflineModified || t.isOfflineCreated).length;
-  }, [visibleTasks]);
+  const offlineModifiedCount = 0; // Handled transparently by Firestore SDK
 
   const unreadNotificationsCount = useMemo(() => {
     return notifications.filter((n) => !n.read).length;
   }, [notifications]);
+
+  const handleSignOut = () => {
+    auth.signOut();
+  };
 
   return (
     <WindowsDesktopFrame
@@ -336,6 +339,7 @@ export default function App() {
       onOpenNotifications={() => setIsNotificationCenterOpen(true)}
       onOpenBrightspaceModal={() => setIsBrightspaceModalOpen(true)}
       onManualSync={handleManualSync}
+      onSignOut={handleSignOut}
     >
       {/* Top Metrics / Overview */}
       <TopOverviewBanner
@@ -426,13 +430,6 @@ export default function App() {
           tasks={visibleTasks}
           onExploreBrightspace={() => setIsBrightspaceModalOpen(true)}
           onCreateTaskForCourse={handleCreateTaskForCourse}
-        />
-      )}
-
-      {activeTab === 'lectures' && (
-        <LecturesView
-          session={session}
-          onExtractTasks={handleExtractReadingTasks}
         />
       )}
 

@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, type Plugin } from 'vite';
-import { GoogleGenAI, Type, Schema } from '@google/genai';
+import { VitePWA } from 'vite-plugin-pwa';
 
 function backendApiPlugin(): Plugin {
   return {
@@ -14,72 +14,6 @@ function backendApiPlugin(): Plugin {
         }
 
         res.setHeader('Content-Type', 'application/json');
-
-        if (req.url === '/api/pdf/parse' && req.method === 'POST') {
-          // Increase payload limit for large PDFs
-          let body = '';
-          req.on('data', (chunk) => {
-            body += chunk;
-          });
-          req.on('end', async () => {
-            try {
-              const data = JSON.parse(body);
-              if (!data.base64) {
-                throw new Error("Missing base64 data");
-              }
-
-              const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-              
-              const schema: Schema = {
-                type: Type.ARRAY,
-                description: "List of reading tasks and assignments extracted from the material",
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING, description: "Title of the reading or task" },
-                    description: { type: Type.STRING, description: "Description or notes" },
-                    dueDate: { type: Type.STRING, description: "ISO 8601 date string, or empty string if optional/no strict deadline" },
-                    estimatedMinutes: { type: Type.INTEGER, description: "Estimated time in minutes" }
-                  },
-                  required: ["title", "description", "dueDate", "estimatedMinutes"]
-                }
-              };
-
-              const interaction = await ai.interactions.create({
-                model: 'gemini-3.6-flash',
-                input: [
-                  {
-                    type: "document",
-                    data: data.base64,
-                    mime_type: 'application/pdf',
-                  },
-                  {
-                    type: "text",
-                    text: "Extract all required readings, assignments, and tasks from this document. Return them as a structured list. If a task does not have a strict deadline, set the dueDate to an empty string."
-                  }
-                ],
-                response_format: schema,
-              });
-
-              let jsonStr = '[]';
-              const lastStep = interaction.steps?.at(-1);
-              if (lastStep?.type === 'model_output') {
-                const textContent = lastStep.content?.find((c: any) => c.type === 'text');
-                if (textContent && textContent.text) {
-                  jsonStr = textContent.text.trim();
-                }
-              }
-
-              res.statusCode = 200;
-              res.end(JSON.stringify({ success: true, tasks: JSON.parse(jsonStr) }));
-            } catch (err: any) {
-              console.error('PDF parsing error:', err);
-              res.statusCode = 500;
-              res.end(JSON.stringify({ success: false, error: err.message }));
-            }
-          });
-          return;
-        }
 
         // Original Brightspace endpoints
         if (req.url === '/api/brightspace/whoami') {
@@ -121,19 +55,6 @@ function backendApiPlugin(): Plugin {
           req.on('end', async () => {
             try {
               const data = body ? JSON.parse(body) : {};
-              const isLoggedIn = data.isLoggedIn !== false;
-
-              if (!isLoggedIn) {
-                res.statusCode = 401;
-                res.end(
-                  JSON.stringify({
-                    success: false,
-                    error:
-                      'You are not logged in to uOttawa Brightspace. Please sign in to authenticate your uOttawa Brightspace session before exploring coursework.',
-                  })
-                );
-                return;
-              }
 
               if (data.feedUrl && typeof data.feedUrl === 'string' && data.feedUrl.startsWith('http')) {
                 try {
@@ -188,7 +109,38 @@ function backendApiPlugin(): Plugin {
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), backendApiPlugin()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      backendApiPlugin(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
+        manifest: {
+          id: '/',
+          name: 'uOttawa Brightspace Tasks',
+          short_name: 'uO Tasks',
+          description: 'uOttawa Brightspace Offline Tasks and Sync.',
+          theme_color: '#ffffff',
+          background_color: '#ffffff',
+          display: 'standalone',
+          start_url: '/',
+          scope: '/',
+          icons: [
+            {
+              src: '/icon.svg',
+              sizes: '192x192 512x512',
+              type: 'image/svg+xml',
+              purpose: 'any maskable',
+            },
+          ],
+        },
+        devOptions: {
+          enabled: true,
+          type: 'module',
+        },
+      }),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(process.cwd(), '.'),

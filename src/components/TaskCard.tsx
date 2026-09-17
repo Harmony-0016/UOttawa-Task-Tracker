@@ -30,7 +30,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onDelete,
 }) => {
   const isCompleted = task.status === 'completed';
-  const hasDueDate = !!task.dueDate;
+  const hasDueDate = !!task.dueDate && !isNaN(new Date(task.dueDate).getTime());
   const dueDate = hasDueDate ? new Date(task.dueDate!) : new Date();
   const now = new Date();
   const diffHours = hasDueDate ? (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60) : 0;
@@ -54,10 +54,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   const formatDueString = (): string => {
     if (isCompleted) {
-      return `Completed on ${task.completedAt ? new Date(task.completedAt).toLocaleDateString() : 'earlier'}`;
+      return `Completed on ${(task.completedAt && !isNaN(new Date(task.completedAt).getTime())) ? new Date(task.completedAt).toLocaleDateString() : 'earlier'}`;
     }
     if (!hasDueDate) {
-      return 'Optional (No Deadline)';
+      return 'Optional';
     }
     if (isOverdue) {
       return `Overdue by ${Math.abs(Math.round(diffHours))} hr(s)`;

@@ -1,0 +1,37 @@
+{
+  "entities": {
+    "Task": {
+      "title": "Task",
+      "description": "A task or assignment imported from Brightspace or manually created.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 10000 },
+        "courseCode": { "type": "string", "maxLength": 50 },
+        "courseName": { "type": "string", "maxLength": 100 },
+        "dueDate": { "type": "string", "maxLength": 50 },
+        "estimatedMinutes": { "type": "number" },
+        "priority": { "type": "string", "enum": ["low", "medium", "high"] },
+        "status": { "type": "string", "enum": ["pending", "in-progress", "completed"] },
+        "source": { "type": "string", "enum": ["brightspace", "manual"] },
+        "brightspaceType": { "type": "string", "enum": ["assignment", "quiz", "exam", "reading", "lab", "discussion", "other"] },
+        "brightspaceUrl": { "type": "string", "maxLength": 1000 },
+        "reminders": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "completedAt": { "type": "string" },
+        "syncStatus": { "type": "string" },
+        "isOfflineModified": { "type": "boolean" },
+        "isOfflineCreated": { "type": "boolean" }
+      },
+      "required": ["userId", "title", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/Task" },
+      "description": "Tasks belonging to a specific user."
+    }
+  }
+}

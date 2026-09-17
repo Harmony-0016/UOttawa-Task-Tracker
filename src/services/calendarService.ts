@@ -11,7 +11,9 @@ export class CalendarService {
    * Format: https://calendar.google.com/calendar/render?action=TEMPLATE&text=...
    */
   static getGoogleCalendarEventUrl(task: TaskItem): string {
+    if (!task.dueDate) return '#';
     const due = new Date(task.dueDate);
+    if (isNaN(due.getTime())) return '#';
     const start = new Date(due.getTime() - (task.estimatedMinutes || 60) * 60 * 1000);
 
     const formatGoogleDate = (d: Date): string => {
@@ -62,7 +64,9 @@ export class CalendarService {
     ];
 
     tasks.forEach((task) => {
+      if (!task.dueDate) return;
       const due = new Date(task.dueDate);
+      if (isNaN(due.getTime())) return;
       const start = new Date(due.getTime() - (task.estimatedMinutes || 60) * 60 * 1000);
       const now = new Date();
 
