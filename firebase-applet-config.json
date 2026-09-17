@@ -3,10 +3,9 @@
   "appId": "1:1066540585313:web:0931916f60c90e2572b520",
   "apiKey": "AIzaSyAUF-dqYLIYr6h571oxWWOJ8LsLyPWCL_I",
   "authDomain": "uotasks.firebaseapp.com",
-  "firestoreDatabaseId": "https://uotasks-default-rtdb.firebaseio.com",
   "storageBucket": "uotasks.firebasestorage.app",
   "messagingSenderId": "1066540585313",
   "measurementId": "",
-  "oAuthClientId": "880216076102-ovqqu2h5rtp5qo9setqinttuf0kt1r26.apps.googleusercontent.com",
+  "oAuthClientId": "",
   "recaptchaSiteKey": ""
 }
