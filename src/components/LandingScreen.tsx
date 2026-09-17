@@ -14,6 +14,11 @@ export const LandingScreen: React.FC = () => {
       setError(null);
       await signInWithPopup(auth, googleProvider);
     } catch (err: any) {
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        // User closed the popup, do not show an error or crash
+        setLoading(false);
+        return;
+      }
       console.error(err);
       setError(err.message || 'Failed to sign in');
       setLoading(false);
