@@ -1,0 +1,6 @@
+{
+  "name": "Daily Task & Google Calendar Sync",
+  "description": "Desktop task management application synchronizing uOttawa Brightspace coursework and tasks with Google Calendar, featuring automated reminders and offline editing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
