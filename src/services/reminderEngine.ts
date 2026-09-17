@@ -72,7 +72,7 @@ export class ReminderEngine {
     tasks.forEach((task) => {
       if (task.status === 'completed') return;
 
-      const dueTime = new Date(task.dueDate).getTime();
+      const dueTime = new Date(task.dueDate || '').getTime();
       const diffMinutes = Math.floor((dueTime - now) / (60 * 1000));
 
       task.reminders.forEach((reminder) => {
@@ -94,7 +94,7 @@ export class ReminderEngine {
             title: `Reminder: [${task.courseCode}] ${task.title}`,
             courseCode: task.courseCode,
             message: `${dueInText}. ${task.description.slice(0, 100)}`,
-            dueDate: task.dueDate,
+            dueDate: task.dueDate || new Date().toISOString(),
             timestamp: new Date().toISOString(),
             read: false,
             type: isOverdue ? 'overdue' : 'due_soon',

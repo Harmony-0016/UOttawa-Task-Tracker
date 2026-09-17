@@ -35,7 +35,7 @@ export const TopOverviewBanner: React.FC<TopOverviewBannerProps> = ({
 
   const activeTasks = tasks.filter((t) => t.status !== 'completed');
   const tasksDueToday = activeTasks.filter((t) => {
-    const dueTime = new Date(t.dueDate).getTime();
+    const dueTime = new Date(t.dueDate || '').getTime();
     return dueTime >= todayStart && dueTime <= todayEnd;
   });
 

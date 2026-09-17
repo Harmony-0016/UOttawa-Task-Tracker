@@ -51,7 +51,7 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
 
   // Filter tasks due on the selected date
   const tasksForDay = tasks.filter((t) => {
-    const due = new Date(t.dueDate);
+    const due = new Date(t.dueDate || '');
     return isSameDay(due, selectedDate);
   });
 
@@ -158,7 +158,7 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
         ) : (
           <div className="divide-y divide-zinc-100 p-4 space-y-3">
             {tasksForDay.map((task) => {
-              const due = new Date(task.dueDate);
+              const due = new Date(task.dueDate || '');
               const isCompleted = task.status === 'completed';
 
               return (
