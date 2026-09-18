@@ -33,7 +33,7 @@ import { CoursesView } from './components/CoursesView';
 import { NotificationCenterModal } from './components/NotificationCenterModal';
 import { ReminderToast } from './components/ReminderToast';
 import { UrgentItemsModal } from './components/UrgentItemsModal';
-import { isTaskUrgent, isTaskObscenelyOverdue } from './utils/taskUtils';
+import { isTaskUrgent, isTaskObscenelyOverdue, sanitizeTaskCourse } from './utils/taskUtils';
 
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
@@ -105,7 +105,8 @@ function AuthenticatedApp() {
     
     // Subscribe to Firestore tasks
     const unsubscribe = FirestoreService.subscribeToTasks((fetchedTasks) => {
-      setTasks(fetchedTasks);
+      const sanitized = fetchedTasks.map(sanitizeTaskCourse);
+      setTasks(sanitized);
     });
 
     return () => {
@@ -145,7 +146,8 @@ function AuthenticatedApp() {
 
   // Task Operations (Offline Supported via Firestore native cache)
   const handleSaveTask = (task: TaskItem) => {
-    FirestoreService.saveTask(task);
+    const sanitized = sanitizeTaskCourse(task);
+    FirestoreService.saveTask(sanitized);
     setEditingTask(null);
   };
 
@@ -166,7 +168,8 @@ function AuthenticatedApp() {
   // Import tasks discovered from Brightspace
   const handleImportBrightspaceTasks = (importedTasks: TaskItem[]) => {
     let current = [...tasks];
-    importedTasks.forEach((imported) => {
+    const sanitizedImported = importedTasks.map(sanitizeTaskCourse);
+    sanitizedImported.forEach((imported) => {
       FirestoreService.saveTask(imported);
       
       const existingIdx = current.findIndex((t) => t.id === imported.id || (t.title === imported.title && t.courseCode === imported.courseCode));

@@ -108,8 +108,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         <div className="flex-1 min-w-0">
           {/* Header row: Course, Badges, Offline sync state */}
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="text-xs font-bold px-2 py-0.5 rounded bg-zinc-100 text-zinc-800 border border-zinc-200">
-              {task.courseCode}
+            <span className="text-xs font-bold px-2 py-0.5 rounded bg-zinc-100 text-zinc-800 border border-zinc-200 inline-flex items-center gap-1.5">
+              <span>{task.courseCode}</span>
+              {task.courseName && task.courseName !== task.courseCode && task.courseName !== 'uOttawa General' && (
+                <span className="font-normal text-zinc-600 border-l border-zinc-300 pl-1.5 truncate max-w-[190px]" title={task.courseName}>
+                  {task.courseName}
+                </span>
+              )}
             </span>
 
             {task.source === 'brightspace' && (

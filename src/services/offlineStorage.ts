@@ -1,5 +1,6 @@
 import { DesktopNotification, TaskItem } from '../types';
 import { INITIAL_BRIGHTSPACE_TASKS } from './brightspaceService';
+import { sanitizeTaskCourse } from '../utils/taskUtils';
 
 const TASKS_STORAGE_KEY = 'uottawa_tasks_offline_cache_v2';
 const NOTIFICATIONS_STORAGE_KEY = 'uottawa_desktop_notifications_v1';
@@ -26,21 +27,27 @@ export class OfflineStorageService {
         // One-time sanitization for "starts" / "available" events that were incorrectly marked with a dueDate
         let modified = false;
         tasks = tasks.map((t) => {
-          const title = t.title.toLowerCase();
-          const desc = t.description?.toLowerCase() || '';
+          let updated = sanitizeTaskCourse(t);
+          const title = updated.title.toLowerCase();
+          const desc = updated.description?.toLowerCase() || '';
           const isStartEvent = title.includes('starts ') || desc.includes('starts ') || title.includes('available');
           
-          if (isStartEvent && t.dueDate) {
+          if (isStartEvent && updated.dueDate) {
             modified = true;
             return {
-              ...t,
-              startDate: t.startDate || t.dueDate,
+              ...updated,
+              startDate: updated.startDate || updated.dueDate,
               dueDate: undefined,
               isOptional: true,
               priority: 'low'
             };
           }
-          return t;
+
+          if (updated.courseCode !== t.courseCode || updated.courseName !== t.courseName) {
+            modified = true;
+          }
+
+          return updated;
         });
 
         if (modified) {
