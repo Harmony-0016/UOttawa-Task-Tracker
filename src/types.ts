@@ -1,7 +1,7 @@
 export type TaskPriority = 'high' | 'medium' | 'low';
 export type TaskStatus = 'pending' | 'in_progress' | 'completed';
 export type TaskSource = 'brightspace' | 'manual';
-export type BrightspaceItemType = 'assignment' | 'quiz' | 'discussion' | 'exam' | 'lab' | 'reading';
+export type BrightspaceItemType = 'assignment' | 'quiz' | 'discussion' | 'exam' | 'lab' | 'reading' | 'project';
 
 export interface TaskReminder {
   id: string;

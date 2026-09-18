@@ -18,7 +18,7 @@ export function isTaskObscenelyOverdue(task: TaskItem): boolean {
     const startTime = new Date(task.startDate).getTime();
     if (!isNaN(startTime)) {
       const hoursSinceStart = (now - startTime) / (1000 * 60 * 60);
-      return hoursSinceStart > 168; // Started more than 7 days ago
+      if (hoursSinceStart > 168) return true; // Started more than 7 days ago
     }
   }
 
@@ -159,6 +159,7 @@ function extractCourseCode(text: string): string {
 
 function detectItemType(text: string): BrightspaceItemType {
   const lower = text.toLowerCase();
+  if (lower.includes('project')) return 'project';
   if (lower.includes('quiz') || lower.includes('test') || lower.includes('midterm') || lower.includes('exam')) {
     return lower.includes('quiz') ? 'quiz' : 'exam';
   }
@@ -230,20 +231,27 @@ export function parseBrightspaceIcs(icsContent: string): TaskItem[] {
 
         const isStartEvent = title.toLowerCase().includes('starts') || description.toLowerCase().includes('starts ') || title.toLowerCase().includes('available');
         let startDateIso = undefined;
+        const itemType = detectItemType(title + ' ' + description);
 
         if (isStartEvent && parsedStartDate) {
           startDateIso = parsedStartDate.toISOString();
           dueDate = ''; // Start events do not have a due date
         } else if (parsedStartDate && parsedStartDate.getTime() > Date.now()) {
           // If the assignment has a start date in the future, it is not yet available to the student
-          continue; 
+          // However, exempt labs and projects so they are always "put down"
+          if (itemType !== 'lab' && itemType !== 'project') {
+            continue; 
+          }
         }
 
         const courseCode = extractCourseCode(title + ' ' + description);
-        const itemType = detectItemType(title + ' ' + description);
         const brightspaceUrl = currentEvent['URL'] || `https://uottawa.brightspace.com/d2l/home`;
-
         const nowIso = new Date().toISOString();
+
+        const isPractice = title.toLowerCase().includes('practice') || 
+                           title.toLowerCase().includes('pratice') || 
+                           description.toLowerCase().includes('practice');
+
         tasks.push({
           id: `brightspace-${currentEvent.UID || Math.random().toString(36).substring(2, 9)}`,
           title,
@@ -252,9 +260,9 @@ export function parseBrightspaceIcs(icsContent: string): TaskItem[] {
           courseName: courseCode,
           dueDate: dueDate ? dueDate : undefined,
           startDate: startDateIso,
-          isOptional: !dueDate,
+          isOptional: (!dueDate && itemType !== 'lab' && itemType !== 'project') || isPractice,
           estimatedMinutes: itemType === 'exam' ? 120 : itemType === 'lab' ? 90 : 60,
-          priority: !dueDate ? 'low' : (itemType === 'exam' || itemType === 'assignment' ? 'high' : 'medium'),
+          priority: ((!dueDate && itemType !== 'lab' && itemType !== 'project') || isPractice) ? 'low' : (itemType === 'exam' || itemType === 'assignment' ? 'high' : 'medium'),
           status: 'pending',
           source: 'brightspace',
           brightspaceType: itemType,
