@@ -240,7 +240,22 @@ export const UrgentItemsModal: React.FC<UrgentItemsModalProps> = ({
                       <h4 className="text-sm font-semibold text-zinc-900 mt-1">{task.title}</h4>
                       {task.description && (
                         <div className="text-xs text-zinc-600 mt-2 leading-relaxed bg-white/60 rounded-md p-2.5 border border-zinc-100/50 whitespace-pre-wrap max-h-40 overflow-y-auto">
-                          {task.description}
+                          {task.description.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                            part.match(/(https?:\/\/[^\s]+)/) ? (
+                              <a
+                                key={i}
+                                href={part}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline text-zinc-600"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {part}
+                              </a>
+                            ) : (
+                              part
+                            )
+                          )}
                         </div>
                       )}
 

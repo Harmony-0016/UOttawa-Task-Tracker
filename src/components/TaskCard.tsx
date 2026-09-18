@@ -155,7 +155,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {/* Description */}
           {task.description && (
             <div className="text-xs text-zinc-600 mt-2 leading-relaxed bg-zinc-50/80 rounded-md p-2.5 border border-zinc-100 whitespace-pre-wrap max-h-40 overflow-y-auto">
-              {task.description}
+              {task.description.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                part.match(/(https?:\/\/[^\s]+)/) ? (
+                  <a
+                    key={i}
+                    href={part}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline text-zinc-600"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {part}
+                  </a>
+                ) : (
+                  part
+                )
+              )}
             </div>
           )}
 

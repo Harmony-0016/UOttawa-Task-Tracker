@@ -4,16 +4,34 @@ import { TaskItem, TaskPriority, BrightspaceItemType } from '../types';
  * Determines whether a task is obscenely overdue (more than a week/168 hours).
  */
 export function isTaskObscenelyOverdue(task: TaskItem): boolean {
-  if (task.status === 'completed') return false;
-  if (!task.dueDate) return false;
-  
-  const dueTime = new Date(task.dueDate).getTime();
-  if (isNaN(dueTime)) return false;
-  
   const now = Date.now();
-  const hoursOverdue = (now - dueTime) / (1000 * 60 * 60);
-  
-  return hoursOverdue > 168; // More than 7 days overdue
+
+  // 1. Check Due Date (Overdue by > 1 week)
+  if (task.dueDate) {
+    const dueTime = new Date(task.dueDate).getTime();
+    if (!isNaN(dueTime)) {
+      const hoursOverdue = (now - dueTime) / (1000 * 60 * 60);
+      return hoursOverdue > 168; // More than 7 days overdue
+    }
+  } else if (task.startDate) {
+    // 2. Check Start Date ONLY if there is no Due Date (Started > 1 week ago)
+    const startTime = new Date(task.startDate).getTime();
+    if (!isNaN(startTime)) {
+      const hoursSinceStart = (now - startTime) / (1000 * 60 * 60);
+      return hoursSinceStart > 168; // Started more than 7 days ago
+    }
+  }
+
+  // 3. Fallback: Filter out extremely old tasks (e.g. from years ago)
+  if (task.createdAt) {
+    const createdTime = new Date(task.createdAt).getTime();
+    if (!isNaN(createdTime)) {
+      const daysSinceCreation = (now - createdTime) / (1000 * 60 * 60 * 24);
+      if (daysSinceCreation > 180) return true; // older than ~6 months
+    }
+  }
+
+  return false;
 }
 
 /**
