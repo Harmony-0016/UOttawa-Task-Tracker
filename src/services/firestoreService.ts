@@ -80,7 +80,12 @@ export class FirestoreService {
     const path = `users/${userId}/tasks`;
     try {
       const taskRef = doc(db, path, task.id);
-      const payload = { ...task, userId }; // Ensure userId is attached for rules
+      
+      // Firestore does not support 'undefined' values. We must sanitize them out.
+      // A quick way is JSON stringify/parse, or looping through keys.
+      const sanitizedTask = JSON.parse(JSON.stringify(task));
+      const payload = { ...sanitizedTask, userId }; // Ensure userId is attached for rules
+      
       await setDoc(taskRef, payload, { merge: true });
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, path);
