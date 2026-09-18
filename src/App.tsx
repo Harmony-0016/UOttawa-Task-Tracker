@@ -261,7 +261,13 @@ function AuthenticatedApp() {
 
   // Visible tasks filter out obscenely overdue tasks so they do not appear anywhere in the UI
   const visibleTasks = useMemo(() => {
-    return tasks.filter((t) => !isTaskObscenelyOverdue(t));
+    return tasks.filter((t) => !isTaskObscenelyOverdue(t)).sort((a, b) => {
+      const timeA = a.dueDate ? new Date(a.dueDate).getTime() : 
+                    (a.startDate ? new Date(a.startDate).getTime() : Infinity);
+      const timeB = b.dueDate ? new Date(b.dueDate).getTime() : 
+                    (b.startDate ? new Date(b.startDate).getTime() : Infinity);
+      return timeA - timeB;
+    });
   }, [tasks]);
 
   // Filtered tasks calculation
@@ -295,6 +301,7 @@ function AuthenticatedApp() {
       // Date Range filter
       const hasDueDate = !!t.dueDate && !isNaN(new Date(t.dueDate).getTime());
       const dueTime = hasDueDate ? new Date(t.dueDate!).getTime() : NaN;
+
       if (filters.dateRange === 'today') {
         if (!hasDueDate || dueTime < todayStart || dueTime > todayEnd) return false;
       } else if (filters.dateRange === 'upcoming') {

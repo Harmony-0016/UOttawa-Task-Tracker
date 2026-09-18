@@ -51,8 +51,18 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
 
   // Filter tasks due on the selected date
   const tasksForDay = tasks.filter((t) => {
-    const due = new Date(t.dueDate || '');
+    // Only consider events with an actual date to filter by
+    const dateToUse = t.dueDate ? t.dueDate : t.startDate;
+    if (!dateToUse) return false;
+    
+    const due = new Date(dateToUse);
     return isSameDay(due, selectedDate);
+  }).sort((a, b) => {
+    const timeA = a.dueDate ? new Date(a.dueDate).getTime() : 
+                  (a.startDate ? new Date(a.startDate).getTime() : Infinity);
+    const timeB = b.dueDate ? new Date(b.dueDate).getTime() : 
+                  (b.startDate ? new Date(b.startDate).getTime() : Infinity);
+    return timeA - timeB;
   });
 
   // Export full calendar to .ics file
